@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, SelectField, SubmitField, FloatField, PasswordField, ValidationError
-# from wtforms.ext.sqlalchemy.fields import QuerySelectField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from flask_bcrypt import Bcrypt
 from wtforms.validators import DataRequired, Length, URL
 from grocery_app.models import ItemCategory, GroceryStore, User
@@ -31,7 +31,7 @@ class GroceryItemForm(FlaskForm):
     # - photo_url - StringField
     photo_url = StringField('Photo', validators=[URL()])
     # - store - QuerySelectField (specify the `query_factory` param)
-    # store = QuerySelectField('Stores', query_factory=lambda: GroceryStore.query)
+    store = QuerySelectField('Stores', query_factory=lambda: GroceryStore.query)
     # - submit button
     submit = SubmitField('Submit')
 

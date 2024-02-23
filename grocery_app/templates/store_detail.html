@@ -13,6 +13,7 @@
         <a href="/item/{{ item.id }}"><img src="{{ item.photo_url }}" alt="{{ item.name }}" width="200px">
         <p><strong>{{ item.name }}</strong></p></a>
         <p><strong>Price: ${{ item.price }}</strong></p>
+        <p><strong>Price: ${{ store.created_by }}</strong></p>
     </div>
     {% endfor %}
 </div>

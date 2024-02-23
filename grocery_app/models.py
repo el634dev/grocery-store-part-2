@@ -1,7 +1,9 @@
 from sqlalchemy_utils import URLType
-
+from flask_login import UserMixin
 from grocery_app.extensions import db
 from grocery_app.utils import FormEnum
+
+# Association table for many-to-many relationship between User and GroceryItem through ShoppingList
 
 class ItemCategory(FormEnum):
     """Categories of grocery items."""
@@ -12,13 +14,22 @@ class ItemCategory(FormEnum):
     FROZEN = 'Frozen'
     OTHER = 'Other'
 
+# Bridge Table
+shopping_list_table = db.Table('shopping_list_items',
+                               db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+                               db.Column('grocery_item_id', db.Integer, db.ForeignKey('grocery_item.id'), primary_key=True))
+
+# --------------------------------------
 class GroceryStore(db.Model):
     """Grocery Store model."""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(80), nullable=False)
     address = db.Column(db.String(200), nullable=False)
     items = db.relationship('GroceryItem', back_populates='store')
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by = db.relationship('User', back_populates='stores')
 
+# --------------------------------------
 class GroceryItem(db.Model):
     """Grocery Item model."""
     id = db.Column(db.Integer, primary_key=True)
@@ -29,3 +40,16 @@ class GroceryItem(db.Model):
     store_id = db.Column(
         db.Integer, db.ForeignKey('grocery_store.id'), nullable=False)
     store = db.relationship('GroceryStore', back_populates='items')
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by = db.relationship('User', back_populates='items')
+    shopping_lists = db.relationship('User', secondary='shopping_list_items', back_populates='shopping_list_items')
+
+# --------------------------------------
+class User(UserMixin, db.Model):
+    """User Model"""
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False, unique=True)
+    password = db.Column(db.String(200), nullable=False)
+    stores = db.relationship('GroceryStore', back_populates='created_by')
+    items = db.relationship('GroceryItem', back_populates='created_by')
+    shopping_list_items = db.relationship('GroceryItem', secondary='shopping_list_items', back_populates='shopping_lists')

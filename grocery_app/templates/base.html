@@ -13,10 +13,18 @@
             {% endfor %}
             <nav>
                 <a href="/">Home</a>
-                <div>
-                    <a href="/new_store">New Store</a>
-                    <a href="/new_item">New Item</a>
-                </div>
+                {% if is_authenticated %}
+                    <div>
+                        <a href="/new_store">New Store</a>
+                        <a href="/new_item">New Item</a>
+                        <a href="/logout">Log Out</a>
+                    </div>
+                {% else %}
+                    <div>
+                        <a href="/signup">Sign Up</a>
+                        <a href="/login">Login</a>
+                    </div>
+                {% endif %}
             </nav>
             {% block content %}{% endblock %}
         </div>

@@ -1,12 +1,15 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from datetime import date, datetime
-from grocery_app.models import GroceryStore, GroceryItem
-from grocery_app.forms import GroceryStoreForm, GroceryItemForm
+from flask_bcrypt import Bcrypt
+from flask_login import login_user, logout_user, login_required, current_user
+from grocery_app.models import GroceryStore, GroceryItem, User
+from grocery_app.forms import GroceryStoreForm, GroceryItemForm, SignUpForm, LoginForm
 
 # Import app and db from events_app package so that we can run app
 from grocery_app.extensions import app, db
 
 main = Blueprint("main", __name__)
+bcrypt = Bcrypt(app)
 
 ##########################################
 #           Routes                       #
@@ -21,6 +24,7 @@ def homepage():
 
 # ----------------------
 # New Store Route
+@login_required
 @main.route('/new_store', methods=['GET', 'POST'])
 def new_store():
     """Create a new store"""
@@ -32,8 +36,9 @@ def new_store():
         new_grocery_store = GroceryStore(
             title = form.title.data,
             address = form.address.data,
+            created_by = current_user.username,
         )
-        
+
         db.session.add(new_grocery_store)
         db.session.commit()
         # - flash a success message, and
@@ -46,6 +51,7 @@ def new_store():
 
 # ----------------------
 # Item Detail Route
+@login_required
 @main.route('/new_item', methods=['GET', 'POST'])
 def new_item():
     """Create new item"""
@@ -59,8 +65,9 @@ def new_item():
             price = form.price.data,
             category = form.category.data,
             photo_url = form.photo_url.data,
+            created_by = current_user.username,
         )
-        
+
         db.session.add(new_grocery_item)
         db.session.commit()
         # - flash a success message, and
@@ -72,6 +79,7 @@ def new_item():
 
 # ----------------------
 # Store Detail Route
+@login_required
 @main.route('/store/<store_id>', methods=['GET', 'POST'])
 def store_detail(store_id):
     """Store Details"""
@@ -94,6 +102,7 @@ def store_detail(store_id):
 
 # ----------------------
 # Item Detail Route
+@login_required
 @main.route('/item/<item_id>', methods=['GET', 'POST'])
 def item_detail(item_id):
     """Item Details"""
@@ -113,3 +122,71 @@ def item_detail(item_id):
     # Send the form to the template and use it to render the form fields
     item = GroceryItem.query.get(item_id)
     return render_template('item_detail.html', item=item)
+
+# -----------------------------------
+# Add item
+@main.route('/add_to_shopping_list/<item_id>', methods=['POST'])
+def add_to_shopping_list(item_id):
+    """adds item to current_user's shopping list"""
+    item = GroceryItem.query.get(item_id)
+
+    if item not in current_user.items:
+        current_user.items.append(item)
+        db.session.commit()
+        flash("Item added succesfully")
+
+    flash('Item was not added. Try again')
+    return redirect(url_for('main.item)detail', item_id=item_id))
+
+# --------------------------
+# See all items
+@main.route('/shopping_list')
+@login_required
+def shopping_list():
+    """ get logged in user's shopping list items and display shopping list items in a template """
+    user = current_user
+    items = user.items
+
+    return render_template('shopping_list.html', items=items)
+
+auth = Blueprint("auth", __name__)
+
+# ---------------------
+@auth.route('/signup', methods=['GET', 'POST'])
+def signup():
+    """Signup"""
+    print('in signup')
+    form = SignUpForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user = User(
+            username=form.username.data,
+            password=hashed_password
+        )
+        db.session.add(user)
+        db.session.commit()
+        flash('Account Created.')
+        print('created')
+        return redirect(url_for('auth.login'))
+    print(form.errors)
+    return render_template('signup.html', form=form)
+
+# ---------------------
+@auth.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login"""
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        login_user(user, remember=True)
+        next_page = request.args.get('next')
+        return redirect(next_page if next_page else url_for('main.homepage'))
+    return render_template('login.html', form=form)
+
+# ---------------------
+@auth.route('/logout')
+@login_required
+def logout():
+    """Logout"""
+    logout_user()
+    return redirect(url_for('main.homepage'))

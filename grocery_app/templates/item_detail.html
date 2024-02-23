@@ -11,20 +11,24 @@
 
 <p><strong>Store:</strong> {{ item.store.title }}</p>
 
+<p><strong>Price: ${{ store.created_by }}</strong></p>
 
 <h2>Edit Item</h2>
 
 <form>
+    {{ form.csrf_token }}
     <fieldset>
         <legend>Please enter your information:</legend>
 
-
-
-        <!-- TODO: Remove the next paragraph and use the `form` object passed in 
+        <!-- Remove the next paragraph and use the `form` object passed in 
             from the route to render a form. -->
-        <p><em>Form fields go here!</em></p>
+        {{ form.title.label }}
+        {{ form.title }}
 
-        <input type="submit" value="Submit">
+        {{ form.address.label }}
+        {{ form.address }}
+
+        {{ form.submit }}
     </fieldset>
 </form>
 
